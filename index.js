@@ -1,18 +1,21 @@
 var osc = require('osc-min');
 var udp = require('dgram');
 
-sock = udp.createSocket("udp4", function(msg, rinfo) {
-  var error;
+var metrics = require('datadog-metrics');
+metrics.init({
+  host: process.env.DATADOG_HOST,
+  prefix: 'drinking_water_watcher.'
+});
+
+sock = udp.createSocket("udp4", function(msg, _) {
   try {
-      var data = osc.fromBuffer(msg);
-      putOscValue(data);
-      return;
-  } catch (_error) {
-      error = _error;
-      return console.log("invalid OSC packet");
+    var data = osc.fromBuffer(msg);
+    putOscValue(data);
+  } catch (error) {
+    console.log("invalid OSC packet");
   }
 });
-sock.bind(9999);
+sock.bind(process.env.DRINKING_WATER_WATCHER_PORT);
 
 function putOscValue(oscData) {
   // oscDataは以下の形式のオブジェクトです
@@ -25,7 +28,7 @@ function putOscValue(oscData) {
   var oscValue = oscData.args[0].value;
   var weightKilogram = getWeightKilogram(oscValue);
   var numberOfWaterBottle = getNumberOfWaterBottle(weightKilogram);
-  console.log(numberOfWaterBottle);
+  metrics.gauge('number_of_water_bottle', numberOfWaterBottle);
 }
 
 // OSCで取得した値から重さを取得します
@@ -58,4 +61,3 @@ function correctWeight(weightKilogram) {
     return weightKilogram + 1.8;
   }
 }
-
