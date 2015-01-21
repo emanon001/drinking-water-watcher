@@ -15,7 +15,7 @@ sock = udp.createSocket("udp4", function(msg, _) {
     console.log("invalid OSC packet");
   }
 });
-sock.bind(9999);
+sock.bind(process.env.DRINKING_WATER_WATCHER_PORT);
 
 function putOscValue(oscData) {
   // oscDataは以下の形式のオブジェクトです
